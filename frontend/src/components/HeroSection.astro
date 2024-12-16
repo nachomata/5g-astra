@@ -1,0 +1,61 @@
+---
+import { Radio, Cpu, BrainCircuit, AudioWaveform } from 'lucide-astro';
+
+const features = [
+  { Icon: Radio, id: 1, text: 'SRS RAN' },
+  { Icon: Cpu, id: 2, text: 'Open 5Gs' },
+	{ Icon: AudioWaveform, id: 3, text: 'ZMQ' },
+  { Icon: BrainCircuit, id: 4, text: 'Machine Learning' },
+];
+---
+
+<div class="relative min-h-screen bg-black flex items-center">
+  <!-- Gradient Background -->
+  <div class="absolute inset-0">
+    <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20"></div>
+    <div class="absolute top-0 left-0 right-0 h-[500px] bg-gradient-radial from-purple-500/20 via-transparent to-transparent"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div class="space-y-8">
+        <h1 class="text-5xl md:text-6xl font-bold">
+          <span class="bg-gradient-to-r from-purple-500 to-blue-500 text-transparent bg-clip-text">
+            5G Astra
+          </span>
+          <br />
+          <span class="text-white">Network Simulator</span>
+        </h1>
+        <p class="text-gray-400 text-lg">
+        	5G Advanced System for Testing RAN Architectures.<br>
+          Experience the power of 5G network simulation with our cutting-edge platform. 
+          Design, test, and optimize your network infrastructure with precision.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="/simulator" class="px-8 py-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white font-medium transition-all transform hover:scale-105">
+            Start Simulation
+          </a>
+          <a href="/demo" class="px-8 py-3 rounded-full border border-white/20 hover:border-purple-500 text-white font-medium transition-all">
+            Watch Demo
+          </a>
+        </div>
+      </div>
+
+      <!-- Abstract Visual -->
+      <div class="relative block">
+        <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-3xl"></div>
+        <div class="relative p-8 grid grid-cols-2 gap-4">
+          {features.map(({ Icon, text, id }) => (
+            <div
+              class="aspect-square bg-black/50 backdrop-blur-xl rounded-2xl border border-white/10 p-6 flex flex-col items-center justify-center gap-5"
+            >
+              <Icon className="w-12 h-12 text-purple-500" />
+							<span class="text-gray-400">{text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

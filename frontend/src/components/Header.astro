@@ -1,0 +1,134 @@
+---
+import HamburgerButton from "@/components/HamburgerButton.astro";
+// import MobilenetLogo from "@/components/svg/MobilenetLogo.astro";
+import { MOBILE_MENU_CONTENT_ID } from "@/consts/const";
+import { Signal } from "lucide-astro";
+
+const { pathname } = Astro.url;
+const normalizedPathName =
+	pathname.length > 1 && pathname.endsWith("/")
+		? pathname.slice(0, -1)
+		: pathname;
+
+const pages = [
+	{ name: "5G Standard", href: "/5G-standard" },
+	{ name: "Simulator", href: "/simulator" },
+	{ name: "Results", href: "/results" },
+	{ name: "About", href: "/about" }
+].map((page) => ({
+	...page,
+	active: normalizedPathName === page.href,
+}));
+---
+
+<header
+	class="fixed w-full bg-black/50 backdrop-blur-xl border-b border-white/10 z-50"
+>
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+		<div class="flex items-center justify-between h-16">
+
+				<a href="/" class="flex items-center space-x-3">
+					<Signal className="w-6 h-6 text-purple-500" />
+					<span
+						class="text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 text-transparent bg-clip-text"
+					>
+						5G Astra
+					</span>
+				</a>
+
+
+			<nav class="flex items-center space-x-8">
+				{
+					pages.map(({ name, href, active }, key) => (
+						<>
+							<a
+								href={href}
+								class:list={[
+									"text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap block",
+									{
+										"text-white font-bold": active,
+									},
+								]}
+								id={`nav-link-${key}`}
+							>
+								{name}
+							</a>
+						</>
+					))
+				}
+			</nav>
+		</div>
+	</div>
+</header>
+
+<style>
+	.nav-item .background {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		opacity: 0;
+		transition: opacity 0.2s;
+	}
+
+	#menuMobileContent {
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.2s;
+		scrollbar-gutter: stable;
+	}
+
+	#menuMobileContent.open {
+		opacity: 1 !important;
+		pointer-events: all;
+	}
+	@media (prefers-reduced-motion) {
+		.nav-item .background {
+			transition: opacity 0s;
+		}
+
+		.nav-item:hover .background,
+		.nav-item:focus .background {
+			opacity: 1;
+		}
+
+		#menuMobileContent {
+			transition: opacity 0s;
+		}
+	}
+</style>
+
+<script>
+	import { $ } from "@/lib/dom-selector";
+
+	function toggleMenu(
+		nav: HTMLElement | null,
+		menuMobileContent: HTMLElement | null,
+		navContent: HTMLElement | null,
+	) {
+		menuMobileContent?.classList.toggle("open");
+		nav?.classList.toggle("open");
+		navContent?.classList.toggle("animate-slide-in-top");
+		document.body.classList.toggle("overflow-hidden");
+		document.body.classList.toggle("lg:overflow-auto");
+	}
+
+	document.addEventListener("astro:page-load", () => {
+		const nav = $("nav");
+		const menuButton = $("#menuButton");
+		const innerMenuButton = $("#innerMenuButton");
+		const menuMobileContext = $("#menuMobileContent");
+		const navContent = $(".navContent");
+
+		menuButton?.addEventListener("hamburgerButtonClicked", () =>
+			toggleMenu(nav, menuMobileContext, navContent),
+		);
+		innerMenuButton?.addEventListener("hamburgerButtonClicked", () =>
+			toggleMenu(nav, menuMobileContext, navContent),
+		);
+
+		if (menuMobileContext?.classList.contains("open")) {
+			toggleMenu(nav, menuMobileContext, navContent);
+		}
+	});
+</script>
