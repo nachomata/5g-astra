@@ -1,0 +1,6 @@
+sqlite3
+influxdb_client
+itertools
+pandas
+numpy
+yaml
