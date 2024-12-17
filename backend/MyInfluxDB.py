@@ -1,10 +1,9 @@
 from influxdb_client import InfluxDBClient, Point, WritePrecision
-from Backend.influxdb_client_class import *
 import pandas as pd
 import numpy as np
 from itertools import zip_longest
 
-class INFLUXDB_CLIENT():
+class InfluxDBCollector():
     
     NUM_CELLS_ACTIVE_UE_QUERY = """
         from(bucket: \"srsran\")
@@ -117,7 +116,7 @@ class INFLUXDB_CLIENT():
     
     def collect_dl_rate(self):
         values = []
-        tables = self.query_api.query(INFLUXDB_CLIENT.DL_RATE_QUERY, org="srs")
+        tables = self.query_api.query(InfluxDBCollector.DL_RATE_QUERY, org="srs")
         for table in tables:
             for record in table.records:
                 values.append(record['_value'])    
@@ -125,7 +124,7 @@ class INFLUXDB_CLIENT():
     
     def collect_ul_rate(self):
         values = []
-        tables = self.query_api.query(INFLUXDB_CLIENT.UL_RATE_QUERY, org="srs")
+        tables = self.query_api.query(InfluxDBCollector.UL_RATE_QUERY, org="srs")
         for table in tables:
             for record in table.records:
                 values.append(record['_value'])    
@@ -133,7 +132,7 @@ class INFLUXDB_CLIENT():
     
     def collect_snr(self):
         values = []
-        tables = self.query_api.query(INFLUXDB_CLIENT.UL_SNR_QUERY, org="srs")
+        tables = self.query_api.query(InfluxDBCollector.UL_SNR_QUERY, org="srs")
         for table in tables:
             for record in table.records:
                 values.append(record['_value'])    
@@ -141,23 +140,20 @@ class INFLUXDB_CLIENT():
         
     def collect_cqi(self):
         values = []
-        tables = self.query_api.query(INFLUXDB_CLIENT.CQI_QUERY, org="srs")
+        tables = self.query_api.query(InfluxDBCollector.CQI_QUERY, org="srs")
         for table in tables:
             for record in table.records:
                 values.append(record['_value'])    
         return values
     
     def collect_experiment_data(self):
-        dl_rate = self.collect_dl_rate()    
+        dl_rate = self.collect_dl_rate()
         ul_rate = self.collect_ul_rate()
         snr = self.collect_snr()
         cqi = self.collect_cqi()
-                
-        # Usar zip_longest para emparejar elementos y rellenar con np.nan donde falten valores
+
         data = list(zip_longest(dl_rate, ul_rate, snr, cqi, fillvalue=np.nan))
-        # Crear el DataFrame con nombres de columnas
         df = pd.DataFrame(data, columns=["dl_rate", "ul_rate", "snr", "cqi"])
-        
         return df
         
     

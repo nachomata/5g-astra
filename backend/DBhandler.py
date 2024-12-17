@@ -2,38 +2,23 @@ import sqlite3
 
 class DBHandler:
     
-    TABLE_EXPERIMENTS = """
-    CREATE TABLE IF NOT EXISTS experiment(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        mcs_downlink INTEGER NOT NULL,
-        mcs_uplink INTEGER NOT NULL,
-        end_rb_downlink INTEGER NOT NULL,
-        end_rb_uplink INTEGER NOT NULL
-        );
-    """
-    TABLE_RESULTS = """
-    CREATE TABLE IF NOT EXISTS results(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        downlink_rate FLOAT,
-        uplink_rate FLOAT,
-        snr FLOAT,
-        cqi INTEGER,
-        experiment_id integer,
-        FOREIGN KEY (experiment_id) REFERENCES experiment(id)
-        );
-    """
-    
     def __init__(self,ruta_bd):
         self.con = sqlite3.connect(ruta_bd)
         self.cursor = self.con.cursor()
         self.db_creation()
         
-    def experiment_insert(self,dl_mcs, ul_mcs, dl_rb,ul_rb):
-        query = f"""
-        INSERT INTO experiment (mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink)
-        VALUES ({dl_mcs}, {ul_mcs}, {dl_rb}, {ul_rb});
+    def experiment_insert(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
+                        iperf_duration, iperf_mode, iperf_transport, iperf_type):
+        query = """
+        INSERT INTO experiment (
+            mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink, 
+            iperf_duration, iperf_mode, iperf_transport, iperf_type
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
-        self.cursor.execute(query)
+        values = (dl_mcs, ul_mcs, dl_rb, ul_rb, iperf_duration, iperf_mode, iperf_transport, iperf_type)
+        self.cursor.execute(query, values)
+
     
     def result_insert(self,dl_rate,uplink_rate, snr, cqi, experiment_id):
         query = f"""
@@ -47,9 +32,9 @@ class DBHandler:
     def result_collect(self, experiment_id):
         query = """SELECT * FROM results WHERE experiment_id = ?;"""
         self.cursor.execute(query, (experiment_id,))
-        # Nombres de las columnas en la tabla
+        
         columns = [col[0] for col in self.cursor.description]
-        # Obtener todos los resultados y convertirlos a diccionarios
+        
         results = [dict(zip(columns, row)) for row in self.cursor.fetchall()]
         return results
     
@@ -59,21 +44,21 @@ class DBHandler:
             FROM experiment
             WHERE id = ?;"""
         self.cursor.execute(query, (experiment_id,))
-        # Nombres de las columnas en la tabla
+        
         columns = [col[0] for col in self.cursor.description]
-        # Obtener todos los resultados y convertirlos a diccionarios
+        
         results = [dict(zip(columns, row)) for row in self.cursor.fetchall()]
         return results
     
     def id_max_collect(self):
         query = "SELECT MAX(id) AS max_id FROM experiment;"
         self.cursor.execute(query)
-        result = self.cursor.fetchone()  # Recupera el primer resultado de la consulta
+        result = self.cursor.fetchone()  
         
         if result and result[0] is not None:
             max_id = result[0]
         else:
-            max_id = 0  # Si la tabla está vacía o no hay IDs
+            max_id = 0  
         
         return max_id
     
@@ -84,11 +69,11 @@ class DBHandler:
             WHERE experiment_id = {id};
         """
         self.cursor.execute(query)
-        result = self.cursor.fetchone()  # Recupera el primer resultado de la consulta
+        result = self.cursor.fetchone() 
         if result and result[0] is not None:
             dl_rate = result[0]
         else:
-            dl_rate = 0  # Si la tabla está vacía o no hay IDs
+            dl_rate = 0 
         
         return dl_rate
     
@@ -99,15 +84,21 @@ class DBHandler:
             WHERE experiment_id = {id};
         """
         self.cursor.execute(query)
-        result = self.cursor.fetchone()  # Recupera el primer resultado de la consulta
+        result = self.cursor.fetchone()  
         if result and result[0] is not None:
             ul_rate = result[0]
         else:
-            ul_rate = 0  # Si la tabla está vacía o no hay IDs
+            ul_rate = 0 
         
         return ul_rate
     
-    def db_creation(self):
-        self.cursor.execute(DBHandler.TABLE_EXPERIMENTS)
-        self.cursor.execute(DBHandler.TABLE_RESULTS)
+    def db_creation(self,db_path):
+        db_schema = ''
+        try:
+            with open(db_path, "r") as file:
+                db_schema = file.read()
+        except Exception as e:
+            return f'ERROR {e}'
+        
+        self.cursor.execute(db_schema)
         self.con.commit()
