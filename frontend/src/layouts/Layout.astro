@@ -1,5 +1,13 @@
 ---
-import Header from '@/components/Header.astro'
+import { ClientRouter } from 'astro:transitions';
+import type { TransitionAnimationValue } from "astro";
+interface Props {
+  title: string;
+  transition_animation?: TransitionAnimationValue;
+}
+
+const { title, transition_animation } = Astro.props;
+import Header from "@/components/Header.astro";
 ---
 
 <!doctype html>
@@ -8,12 +16,23 @@ import Header from '@/components/Header.astro'
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>5G Astra: 5G Advanced System for Testing RAN Architectures Resources</title>
+		<title>{title}</title>
+		<ClientRouter />
 	</head>
-	<body class="bg-black">
+	<body class="bg-black text-white">
+		
+			<div
+				class="fixed inset-0 -z-10 h-full w-full items-center px-5 py-24 bg-gradient-to-br from-purple-500/20 to-blue-500/20"
+			>
+			
+			<!-- <div
+				class="absolute top-0 left-0 right-0 h-[500px] bg-gradient-radial from-purple-500/20 via-transparent to-transparent"
+			>
+			</div> -->
+		</div>
+		<!-- <div class="absolute inset-0 -z-10 h-full w-full items-center px-5 py-24 [background:radial-gradient(125%_125%_at_50%_10%,#000_40%,#63e_100%)]"></div> -->
 		<Header />
-		<slot />
+		<slot transition:animate={transition_animation}/>
 	</body>
 </html>
 

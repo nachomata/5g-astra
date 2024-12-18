@@ -1,0 +1,198 @@
+---
+// Componente SimulationForm.astro
+const modulation = [
+    { value: '0', text: '0: Modulation: 4 QAM | Code Rate x 1024: 120 | Spectral efficiency: 0.2344' }, 
+    { value: '1', text: '1: Modulation: 4 QAM | Code Rate x 1024: 157 | Spectral efficiency: 0.3066' }, 
+    { value: '2', text: '2: Modulation: 4 QAM | Code Rate x 1024: 193 | Spectral efficiency: 0.3770' }, 
+    { value: '3', text: '3: Modulation: 4 QAM | Code Rate x 1024: 251 | Spectral efficiency: 0.4902' }, 
+    { value: '4', text: '4: Modulation: 4 QAM | Code Rate x 1024: 308 | Spectral efficiency: 0.6016' }, 
+    { value: '5', text: '5: Modulation: 4 QAM | Code Rate x 1024: 379 | Spectral efficiency: 0.7402' }, 
+    { value: '6', text: '6: Modulation: 4 QAM | Code Rate x 1024: 449 | Spectral efficiency: 0.8770' }, 
+    { value: '7', text: '7: Modulation: 4 QAM | Code Rate x 1024: 526 | Spectral efficiency: 1.0273' }, 
+    { value: '8', text: '8: Modulation: 4 QAM | Code Rate x 1024: 602 | Spectral efficiency: 1.1758' }, 
+    { value: '9', text: '9: Modulation: 4 QAM | Code Rate x 1024: 679 | Spectral efficiency: 1.3262' }, 
+    { value: '10', text: '10: Modulation: 16 QAM | Code Rate x 1024: 340 | Spectral efficiency: 1.3281' }, 
+    { value: '11', text: '11: Modulation: 16 QAM | Code Rate x 1024: 378 | Spectral efficiency: 1.4766' }, 
+    { value: '12', text: '12: Modulation: 16 QAM | Code Rate x 1024: 434 | Spectral efficiency: 1.6953' }, 
+    { value: '13', text: '13: Modulation: 16 QAM | Code Rate x 1024: 490 | Spectral efficiency: 1.9141' }, 
+    { value: '14', text: '14: Modulation: 16 QAM | Code Rate x 1024: 553 | Spectral efficiency: 2.1602' }, 
+    { value: '15', text: '15: Modulation: 16 QAM | Code Rate x 1024: 616 | Spectral efficiency: 2.4063' }, 
+    { value: '16', text: '16: Modulation: 16 QAM | Code Rate x 1024: 658 | Spectral efficiency: 2.5703' }, 
+    { value: '17', text: '17: Modulation: 64 QAM | Code Rate x 1024: 438 | Spectral efficiency: 2.5664' }, 
+    { value: '18', text: '18: Modulation: 64 QAM | Code Rate x 1024: 466 | Spectral efficiency: 2.7305' }, 
+    { value: '19', text: '19: Modulation: 64 QAM | Code Rate x 1024: 517 | Spectral efficiency: 3.0293' }, 
+    { value: '20', text: '20: Modulation: 64 QAM | Code Rate x 1024: 567 | Spectral efficiency: 3.3223' }, 
+    { value: '21', text: '21: Modulation: 64 QAM | Code Rate x 1024: 616 | Spectral efficiency: 3.6094' }, 
+    { value: '22', text: '22: Modulation: 64 QAM | Code Rate x 1024: 666 | Spectral efficiency: 3.9023' }, 
+    { value: '23', text: '23: Modulation: 64 QAM | Code Rate x 1024: 719 | Spectral efficiency: 4.2129' }, 
+    { value: '24', text: '24: Modulation: 64 QAM | Code Rate x 1024: 772 | Spectral efficiency: 4.5234' }, 
+    { value: '25', text: '25: Modulation: 64 QAM | Code Rate x 1024: 822 | Spectral efficiency: 4.8164' }, 
+    { value: '26', text: '26: Modulation: 64 QAM | Code Rate x 1024: 873 | Spectral efficiency: 5.1152' }, 
+    { value: '27', text: '27: Modulation: 64 QAM | Code Rate x 1024: 910 | Spectral efficiency: 5.3320' }, 
+    { value: '28', text: '28: Modulation: 64 QAM | Code Rate x 1024: 948 | Spectral efficiency: 5.5547' }
+];
+
+const fields = [
+    { id: 'experiment_name', description: 'Experiment name', type: 'text', required: true },
+    { id: 'experiment_description', description: 'Experiment description', type: 'textarea', required: true },
+    { id: 'mcs_downlink', description: 'MCS downlink', type: 'select', options: modulation, required: true},
+	{ id: 'mcs_uplink', description: 'MCS uplink', type: 'select', options: modulation, required: true},
+    { id: 'end_rb_downlink', description: 'End RB downlink', type: 'number', min_value: '1', max_value: '275', required: true, default: 275 },
+    { id: 'end_rb_uplink', description: 'End RB uplink', type: 'number', min_value: '1', max_value: '275', required: true, default: 275 },
+    { id: 'iperf_direction', description: 'IPerf direction', type: 'select', options: [
+        { value: 'uplink', text: 'Uplink' }, 
+        { value: 'downlink', text: 'Downlink' }, 
+        { value: 'both', text: 'Both' }
+    ], required: true },
+    { id: 'iperf_duration', description: 'IPerf duration (s)', type: 'number', required: true, default: 60 },
+    { id: 'iperf_protocol', description: 'IPerf protocol', type: 'select', options: [
+        { value: 'tcp', text: 'TCP' }, 
+        { value: 'udp', text: 'UDP' }
+	], required: true },
+    { id: 'iperf_bitrate', description: 'IPerf bitrate (Kbps)', type: 'number', required: true, default: 100 }
+];
+---
+
+<form
+    class="grid grid-cols-1 gap-4 max-w-[600px] w-full"
+>
+    {
+        fields.map((field) => (
+            <div class="flex flex-col gap-2">
+                <label class="text-gray-400 text-xl" for={field.id}>
+                    {field.description}
+                </label>
+                {field.type === "text" && (
+                    <input
+                        type="text"
+                        id={field.id}
+                        name={field.id}
+                        required={field.required}
+                        class="p-2 rounded-md bg-black/50 text-white 
+                            placeholder-gray-400 
+                            focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-purple-500  
+                                transition duration-200"
+                    />
+                )}
+                {field.type === "textarea" && (
+                    <textarea
+                        id={field.id}
+                        name={field.id}
+                        required={field.required}
+                        class="p-2 rounded-md bg-black/50 text-white placeholder-gray-400 
+                            focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-purple-500  
+                                transition duration-200"
+                    />
+                )}
+                {field.type === "number" && (
+                    <input
+                        type="number"
+                        id={field.id}
+                        name={field.id}
+                        required={field.required}
+                        class="p-2 rounded-md bg-black/50 text-white placeholder-gray-400 
+                            focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-purple-500  
+                                transition duration-200"
+                        value={field.default}
+                        min={field.min_value}
+                        max={field.max_value}
+                    />
+                )}
+                {field.type === "select" && (
+                    <select
+                        id={field.id}
+                        name={field.id}
+                        required={field.required}
+                        class="p-2 rounded-md bg-black/50 text-white placeholder-gray-400 
+                            focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-purple-500  
+                                transition duration-200"
+                    >
+                        {field.options?.map((option) => (
+                            <option value={option.value}>{option.text}</option>
+                        ))}
+                    </select>
+                )}
+            </div>
+        ))
+    }
+    <button
+        id="start-simulation-button"
+        type="submit"
+        class="px-8 py-3 rounded-full bg-purple-500 hover:bg-purple-600 text-white font-medium transition-all transform hover:scale-105"
+    >
+        Start Simulation
+    </button>
+</form>
+
+
+<style>
+    textarea {
+        field-sizing: content;
+    }
+</style>
+
+<script>
+    import { $ } from "@/lib/dom-selector";
+    import { PUBLIC_BACKEND_URL } from "@/consts/const";
+    document.addEventListener("astro:page-load", () => {
+        const form = $("form");
+        if (!form) {
+            throw new Error("Form not found");
+        }
+        const $form = form as HTMLFormElement;
+
+        const validateForm = () => {
+            let valid = true;
+            for (const el of $form.elements) {
+                if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+                    if (!el.reportValidity()) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            return valid;
+        };
+        const postData = async () => {
+            const dataToSend = {
+                experiment_name: $form.experiment_name.value,
+                experiment_description: $form.experiment_description.value,
+                mcs_downlink: parseInt($form.mcs_downlink.value),
+                mcs_uplink: parseInt($form.mcs_uplink.value),
+                end_rb_downlink: parseInt($form.end_rb_downlink.value),
+                end_rb_uplink: parseInt($form.end_rb_uplink.value),
+                iperf_direction: $form.iperf_direction.value,
+                iperf_duration: parseInt($form.iperf_duration.value),
+                iperf_protocol: $form.iperf_protocol.value,
+                iperf_bitrate: parseInt($form.iperf_bitrate.value)
+            };
+            console.log(JSON.stringify(dataToSend));
+
+            try {
+                const response = await fetch(`${PUBLIC_BACKEND_URL}/experiment`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(dataToSend)
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = `/results/${data.id}`;
+                } else {
+                    throw new Error("Error launching simulation.");
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        const submitHandler = () => {
+            if (validateForm()) postData();
+        };
+
+        $form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            submitHandler();
+        });
+    })
+</script>
