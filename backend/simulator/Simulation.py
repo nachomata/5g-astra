@@ -4,9 +4,11 @@ import shutil
 import time
 import yaml
 import os
+import pandas as pd
+
 from backend.simulator.DBhandler import DBHandler
 from MyInfluxdb import InfluxDBCollector
-
+from MLfunctions import Functions as fun
 class Simulation:
     
     GNB_ZMQ_FILE_PATH = os.path.join("..", "docker_open5gs", "srsran", "gnb_zmq.yml")
@@ -233,7 +235,23 @@ class Simulation:
         else:
             print("Dirección no válida. Usa 'uplink', 'downlink' o 'both'.")
         
-    #ML MODEL QUE CALCULA LA MOS CON LOS DATOS EXPERIMENTOS
-    def MOS_calculator(self):
-        print("MANU BOBO ESPABILA CON EL ML")
+    def ML_MOS_calculator(self, inputs):
+        kqi = "mos"
+        ml_mode = "regression"
+        algorithm = 'RF'
+
+        X = pd.DataFrame(inputs)
+        scaler = fun.LoadScaler("./stdScaler")
+        inputsScaled = scaler.transform(inputs)
+
+        try:
+            fileName ='{}/{}_{}_{}_{}.joblib'.format(".", algorithm,  kqi, ml_mode, 'No_FE_NoKQI')
+            if os.path.exists(fileName):
+                model = fun.LoadModel(fileName)
+                y_pred = model.predict(inputsScaled)
+
+        except Exception as e:
+            print("It is not possible to estimate " + kqi + " with " + algorithm)
+            print(e)
         
+        return y_pred
