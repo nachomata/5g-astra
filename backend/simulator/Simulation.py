@@ -4,7 +4,7 @@ import shutil
 import time
 import yaml
 import os
-from DBhandler import DBHandler
+from backend.simulator.DBhandler import DBHandler
 from MyInfluxdb import InfluxDBCollector
 
 class Simulation:
