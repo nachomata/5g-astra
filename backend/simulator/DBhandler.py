@@ -20,13 +20,13 @@ class DBHandler:
         self.cursor.execute(query, values)
 
     
-    def result_insert(self,dl_rate,uplink_rate, snr, cqi, experiment_id):
-        query = f"""
+    def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id):
+        query = """
         INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, experiment_id)
-        VALUES (?, ?, ?, ?, {experiment_id});
+        VALUES (?, ?, ?, ?, ?);
         """
-        values = list(zip(dl_rate, uplink_rate, snr, cqi))
-        self.cursor.executemany(query,values)
+        values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi)]
+        self.cursor.executemany(query, values)
         self.con.commit()
     
     def result_collect(self, experiment_id):
