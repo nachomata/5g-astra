@@ -19,7 +19,7 @@ class Simulation:
         1: "Completed",
         2: "Error"
     }
-    GNB_ZMQ_FILE_PATH = os.path.join("..", "docker_open5gs", "srsran", "gnb_zmq.yml")
+    GNB_ZMQ_FILE_PATH = os.path.join("..", "..", "docker_open5gs", "srsran", "gnb_zmq.yml")
     DB_PATH = os.path.join(".", "AstraSQLite.db")
     URL = "http://localhost:8086"
     TOKEN = '605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b'
@@ -71,16 +71,16 @@ class Simulation:
         # GNB
         self.run_command(f'docker compose -f "{srsgnb_zmq_path}" up -d')
         while not self.check_container_gnb():
+            time.sleep(5)
             print('GNB NOT UP...')
-            time.sleep(10)
         
         print('GNB UP')
         # time.sleep(Simulation.DELAY)
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" up -d')  
         while not self.check_container_ue():
+            time.sleep(5)
             print('UE NOT UP...')
-            time.sleep(10)
         print('UE UP')
     
     #GNB MODIFIER
@@ -152,9 +152,12 @@ class Simulation:
         ## WAIT THE EXPERIMENT ENDS
         # time.sleep(self.iperf_duration + 10)
         ## OBTAIN RESULTS
-        print('IPERFS ENDING...')
         print('COLLECTING EXPERIMENT DATA')
         results = self.influxdb_handler.collect_experiment_data()
+        print(type(results))
+        
+        print(results.to_dict())
+        
         #SAVE RESULTS IN DB
         print('SAVING DATA')
         self.save_results(results)
@@ -168,7 +171,8 @@ class Simulation:
         #mos = self.MOS_calculator()
         
     ## GUARDAR LOS DATOS EN LA BASE DE DATOS
-    def save_results(self,results):        
+    def save_results(self, results):
+        print('SAVING RESULTS')
         self.db_handler.result_insert(
             dl_rate = results['dl_rate'],
             timestamp= results['timestamp'],
@@ -177,27 +181,28 @@ class Simulation:
             cqi = results['cqi'],
             experiment_id = self.id
         )
+        print('RESULTS SAVED')
     
     ## SCRIPT QUE CIERRE LOS DOCKERS PROPLAYERS 
     def close_network(self):
-        base_path = os.path.join(os.path.dirname(__file__), "docker_open5gs")
+        base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docker_open5gs")
         sa_deploy_path = os.path.join(base_path, "sa-deploy.yaml")
-        srsgnb_zmq_path = os.path.join(base_path, "srsgnb_zmq.yaml")
+        srsgnb_zmq_path = os.path.join(base_path, "srsgnb_zmq_with_grafana.yaml")
         srsue_5g_zmq_path = os.path.join(base_path, "srsue_5g_zmq.yaml")
         
         # Core
-        self.run_command(f'docker compose -f "{sa_deploy_path}" down')
+        self.run_command(f'docker compose -f "{sa_deploy_path}" stop')
         # GNB
-        self.run_command(f'docker compose -f "{srsgnb_zmq_path}" down')
+        self.run_command(f'docker compose -f "{srsgnb_zmq_path}" stop')
         # UE
-        self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" down')  
+        self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" stop')  
     
     def check_container_gnb(self):
-        command = "docker logs srsgnb_zmq"
+        command = "docker logs --tail 10 srsgnb_zmq"
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         return "Connection to AMF on 172.22.0.10:38412 completed" in result.stdout
     def check_container_ue(self):
-        command = "docker logs srsue_5g_zmq"
+        command = "docker logs --tail 10 srsue_5g_zmq"
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
         return "RRC Connected" in result.stdout
 
@@ -215,7 +220,6 @@ class Simulation:
             mode (str): Modo de tráfico: "fixed" o "variable". Por defecto es "fixed".
         """
         
-        self.check_container_ue()
         # Validar parámetros 'protocol' y 'mode'
         if protocol not in ["tcp", "udp"]:
             print("Protocolo no válido. Usa 'tcp' o 'udp'.")
@@ -237,7 +241,7 @@ class Simulation:
 
         if direction == "uplink":
             subprocess.Popen('docker exec upf /bin/bash -c "iperf -s {flag}"'.format(flag=protocol_flag), shell=True)
-            subprocess.Popen(
+            subprocess.run(
                 'docker exec srsue_5g_zmq /bin/bash -c "apt install iperf && iperf {flag} {reverse} {bandwidth} -c 192.168.100.1 -t {duration}"'.format(
                     flag=protocol_flag, reverse=reverse_flag, duration=duration, bandwidth=bandwidth_flag
                 ),

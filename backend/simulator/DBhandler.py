@@ -44,12 +44,12 @@ class DBHandler:
         con.commit()
         con.close()
         
-    def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id):
+    def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id, timestamp):
         query = """
-        INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, experiment_id)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, experiment_id, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?);
         """
-        values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi)]
+        values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi, timestamp)]
         con = self.get_conn()
         cursor = con.cursor()
         cursor.executemany(query, values)

@@ -130,9 +130,7 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.UL_RATE_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                 values.append({
-                    "value": record['_value'],
-                })    
+                 values.append(record['_value'])   
         return values
     
     def collect_snr(self):
@@ -140,9 +138,7 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.UL_SNR_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                 values.append({
-                    "value": record['_value'],
-                })    
+                 values.append(record['_value'])    
         return values
         
     def collect_cqi(self):
@@ -150,21 +146,22 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.CQI_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                 values.append({
-                    "value": record['_value'],
-                })
+                 values.append(record['_value'])
         return values
     
     def collect_experiment_data(self):
-        
-        dl_rate = self.collect_dl_rate()
-        dl_rate_values = [item['value'] for item in dl_rate]
-        timestamp = [item['time'] for item in dl_rate]
-        
-        ul_rate = self.collect_ul_rate()
-        snr = self.collect_snr()
-        cqi = self.collect_cqi()
+        print("Collecting data")
+        try:
+            dl_rate = self.collect_dl_rate()
+            dl_rate_values = [item['value'] for item in dl_rate]
+            timestamp = [item['time'].strftime('%Y%m%d_%H_%M_%S') for item in dl_rate]
+            
+            ul_rate = self.collect_ul_rate()
+            snr = self.collect_snr()
+            cqi = self.collect_cqi()
 
-        data = list(zip_longest(timestamp,dl_rate_values, ul_rate, snr, cqi, fillvalue=np.nan))
-        df = pd.DataFrame(data, columns=["timestamp","dl_rate", "ul_rate", "snr", "cqi"])
+            data = list(zip_longest(timestamp,dl_rate_values, ul_rate, snr, cqi, fillvalue=np.nan))
+            df = pd.DataFrame(data, columns=["timestamp","dl_rate", "ul_rate", "snr", "cqi"])
+        except Exception as e:
+            print(e)
         return df

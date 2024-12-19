@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS experiment(
 
 CREATE TABLE IF NOT EXISTS results(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        time TIMESTAMP,
+        timestamp TIMESTAMP,
         downlink_rate FLOAT,
         uplink_rate FLOAT,
         snr FLOAT,
