@@ -70,6 +70,7 @@ class Simulation:
         # time.sleep(Simulation.DELAY)
         # GNB
         self.run_command(f'docker compose -f "{srsgnb_zmq_path}" up -d')
+        time.sleep(5)
         while not self.check_container_gnb():
             time.sleep(5)
             print('GNB NOT UP...')
@@ -78,6 +79,7 @@ class Simulation:
         # time.sleep(Simulation.DELAY)
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" up -d')  
+        time.sleep(5)
         while not self.check_container_ue():
             time.sleep(5)
             print('UE NOT UP...')

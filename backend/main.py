@@ -78,7 +78,7 @@ def delete_experiment(id:int):
 @app.route('/api/v1/experiment/<int:id>/status', methods=['GET'])
 def get_status(id:int):
     global db
-    time_sleeps = 25
+    time_sleeps = 60*6
 
     exp = db.experiment_collect(id)
 
@@ -87,9 +87,18 @@ def get_status(id:int):
     end_time = start_time + exp[0]["iperf_duration"] + time_sleeps
     actual_time = time()
 
-    progress = (actual_time - start_time) / (end_time-start_time) * 100
+    progress = min(((actual_time - start_time) / (end_time - start_time) * 100), 98)    
 
-    return jsonify(progress=100 if progress > 100 else progress), 200
+    if id not in simulation_list:
+        status = Simulation.STATUS_MSG[Simulation.STATUS_COMPLETED]
+    else:
+        status = Simulation.STATUS_MSG[simulation_list[id]["status"]]
+    if status == Simulation.STATUS_MSG[Simulation.STATUS_COMPLETED]:
+        progress = 100
+    return jsonify({
+        "status": status,
+        "progress": progress
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
