@@ -1,11 +1,13 @@
 ---
+import { PUBLIC_BACKEND_URL } from '@/consts/const';
+
 interface Props {
     id: number;
 }
-
 const { id } = Astro.props;
+const mos = await fetch(`${PUBLIC_BACKEND_URL}/experiment/${id}/mos`);
 ---
-
+<div class="w-full max-w-[700px] p-6 rounded-xl flex justify-center bg-gradient-to-r from-purple-600/80 to-blue-600/80 text-gray-300 text-xl">✨ Machine learning estimation: MOS = {mos}</div>
 <div id="container" class="max-w-[1000px] w-full flex flex-col gap-10" data-id=`${id}`></div>
 
 <script>
