@@ -4,12 +4,15 @@ from time import sleep, time
 import pandas as pd
 from flask import Flask, request, jsonify, send_file
 from datetime import datetime
+from flask_cors import CORS, cross_origin
 
 
 DB_PATH = 'AstraSQLite.db'
 db = DBHandler(DB_PATH)
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 simulation_list = {}
 

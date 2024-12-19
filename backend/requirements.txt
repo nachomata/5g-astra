@@ -4,3 +4,4 @@ numpy
 PyYAML
 flask
 joblib
+flask_cors
