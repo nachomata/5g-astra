@@ -13,19 +13,28 @@ from MyInfluxDB import InfluxDBCollector
 from MLfunctions import Functions as fun
 class Simulation:
     
+    STATUS_RUNNING = 0
+    STATUS_COMPLETED = 1
+    STATUS_ERROR = 2
+    STATUS_MSG = {
+        0: "Running",
+        1: "Completed",
+        2: "Error"
+    }
     GNB_ZMQ_FILE_PATH = os.path.join("..", "docker_open5gs", "srsran", "gnb_zmq.yml")
     DB_PATH = os.path.join(".", "AstraSQLite.db")
     URL = "http://localhost:8086"
     TOKEN = '605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b'
     DELAY = 5
     
-    def __init__(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
+    def __init__(self,name,dl_mcs, ul_mcs, dl_rb, ul_rb, 
                  iperf_duration, iperf_mode, iperf_transport, iperf_type,description):
         
         self.dl_mcs = dl_mcs
         self.ul_mcs = ul_mcs
         self.dl_rb = dl_rb
         self.ul_rb = ul_rb
+        self.name = name
         
         self.iperf_duration = iperf_duration
         self.iperf_mode = iperf_mode
@@ -35,7 +44,7 @@ class Simulation:
         self.db_handler = DBHandler(Simulation.DB_PATH)
         self.influxdb_handler = InfluxDBCollector(Simulation.TOKEN,Simulation.URL)
         
-        self.last_id = self.db_handler.experiment_insert(
+        self.id = self.db_handler.experiment_insert(
             dl_mcs=self.dl_mcs,
             ul_mcs=self.ul_mcs,
             dl_rb=self.dl_rb,
@@ -44,8 +53,12 @@ class Simulation:
             iperf_mode=self.iperf_mode,
             iperf_transport=self.iperf_transport,
             iperf_type=self.iperf_type,
-            description = description
+            description = description,
+            name = self.name
         )
+        
+    def get_id(self):
+        return self.id
                 
     def launch_network(self):
         base_path = os.path.join(os.path.dirname(__file__), "docker_open5gs")
@@ -96,7 +109,6 @@ class Simulation:
         except Exception as e:
             print(f"Error al actualizar el archivo: {e}")
     
-    
     def run_command(self,command):
         try:
             print(f"\nEjecutando: {command}")
@@ -121,7 +133,7 @@ class Simulation:
         print('srsRAN  --> initialization')
         self.launch_network()     
         ## EXECUTE IPERFS
-        time.sleep(4)
+        time.sleep(Simulation.DELAY)
         print('NETWORK WORKING FINE')
         self.launch_iperfs(
             direction = self.iperf_mode,
@@ -143,6 +155,8 @@ class Simulation:
         print('CLOSING THE NETWORK...')
         self.close_network()
         
+        self.db_handler.add_experiment_end_time(self.id)
+        
         #CALCULATING THE MOS
         #mos = self.MOS_calculator()
         
@@ -154,7 +168,7 @@ class Simulation:
             uplink_rate = results['ul_rate'],
             snr = results['snr'],
             cqi = results['cqi'],
-            experiment_id = self.last_id
+            experiment_id = self.id
         )
     
     ## SCRIPT QUE CIERRE LOS DOCKERS PROPLAYERS 

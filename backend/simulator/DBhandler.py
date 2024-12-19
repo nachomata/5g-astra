@@ -10,17 +10,17 @@ class DBHandler:
         self.db_creation()
         
     def experiment_insert(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
-                        iperf_duration, iperf_mode, iperf_transport, iperf_type, description):
+                        iperf_duration, iperf_mode, iperf_transport, iperf_type, description,name):
         
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = """
         INSERT INTO experiment (
-            start_time, experiment_description, mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink, 
+            start_time, experiment_description, name_experiment,mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink, 
             iperf_duration, iperf_mode, iperf_transport, iperf_type
         )
-        VALUES (?,?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?,?,?,?, ?, ?, ?, ?, ?, ?);
         """
-        values = (start_time, description, dl_mcs, ul_mcs, dl_rb, ul_rb, iperf_duration, iperf_mode, iperf_transport, iperf_type)
+        values = (start_time, description,name, dl_mcs, ul_mcs, dl_rb, ul_rb, iperf_duration, iperf_mode, iperf_transport, iperf_type)
         self.cursor.execute(query, values)
         return self.cursor.lastrowid
     
@@ -72,7 +72,7 @@ class DBHandler:
     
     def experiment_collect(self, experiment_id):
         query = """
-            SELECT mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink
+            SELECT *
             FROM experiment
             WHERE id = ?;"""
         self.cursor.execute(query, (experiment_id,))

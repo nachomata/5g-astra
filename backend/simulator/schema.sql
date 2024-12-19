@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS experiment(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         start_time TIMESTAMP NOT NULL,
+        name_experiment TEXT NOT NULL,
         end_time TIMESTAMP,
         experiment_description TEXT NOT NULL,
         mcs_downlink INTEGER NOT NULL,
