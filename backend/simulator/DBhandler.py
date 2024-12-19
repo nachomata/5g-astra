@@ -5,25 +5,32 @@ import os
 
 class DBHandler:
     
-    def __init__(self,ruta_bd):
-        self.con = sqlite3.connect(ruta_bd, check_same_thread=False)
-        self.cursor = self.con.cursor()
+    def __init__(self, ruta_bd):
+        self.db_name = ruta_bd
         self.db_creation(os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.sql"))
+
+    def get_conn(self):
+        return sqlite3.connect(self.db_name, timeout=100, check_same_thread=False)
         
     def experiment_insert(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
-                        iperf_duration, iperf_mode, iperf_transport, iperf_type, description,name):
+                        iperf_duration, iperf_mode, iperf_transport, iperf_bitrate, description,name):
         
         start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = """
         INSERT INTO experiment (
             start_time, experiment_description, name_experiment,mcs_downlink, mcs_uplink, end_rb_downlink, end_rb_uplink, 
-            iperf_duration, iperf_mode, iperf_transport, iperf_type
+            iperf_duration, iperf_mode, iperf_transport, iperf_bitrate
         )
-        VALUES (?,?,?,?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
-        values = (start_time, description,name, dl_mcs, ul_mcs, dl_rb, ul_rb, iperf_duration, iperf_mode, iperf_transport, iperf_type)
-        self.cursor.execute(query, values)
-        return self.cursor.lastrowid
+        values = (start_time, description,name, dl_mcs, ul_mcs, dl_rb, ul_rb, iperf_duration, iperf_mode, iperf_transport, iperf_bitrate)
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query, values)
+        experiment_id = cursor.lastrowid
+        con.commit()
+        con.close()
+        return experiment_id
     
     def add_experiment_end_time(self, id):
         end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -32,8 +39,10 @@ class DBHandler:
             SET end_time = ?
             WHERE id = ?;
             """
-        self.cursor.execute(query, (end_time, id))
-        self.con.commit()
+        con = self.get_conn()
+        con.execute(query, (end_time, id))
+        con.commit()
+        con.close()
         
     def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id):
         query = """
@@ -41,34 +50,46 @@ class DBHandler:
         VALUES (?, ?, ?, ?, ?);
         """
         values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi)]
-        self.cursor.executemany(query, values)
-        self.con.commit()
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.executemany(query, values)
+        con.commit()
+        con.close()
     
     def result_collect(self, experiment_id):
         query = """SELECT * FROM results WHERE experiment_id = ?;"""
-        self.cursor.execute(query, (experiment_id,))
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query, (experiment_id,))
         
-        columns = [col[0] for col in self.cursor.description]
+        columns = [col[0] for col in cursor.description]
         
-        results = [dict(zip(columns, row)) for row in self.cursor.fetchall()]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        con.close()
         return results
     
     def get_all_experiments(self):
         query = "SELECT * FROM experiment;"
-        self.cursor.execute(query)
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query)
         
-        rows = self.cursor.fetchall()  
-        columns = [description[0] for description in self.cursor.description]
+        rows = cursor.fetchall()  
+        columns = [description[0] for description in cursor.description]
         
+        con.close()
         return pd.DataFrame(rows, columns=columns)
     
     def get_all_results(self):
         query = "SELECT * FROM results;"
-        self.cursor.execute(query)
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query)
         
-        rows = self.cursor.fetchall()  
-        columns = [description[0] for description in self.cursor.description]
+        rows = cursor.fetchall()  
+        columns = [description[0] for description in cursor.description]
         
+        con.close()
         return pd.DataFrame(rows, columns=columns)
     
     def experiment_collect(self, experiment_id):
@@ -76,11 +97,14 @@ class DBHandler:
             SELECT *
             FROM experiment
             WHERE id = ?;"""
-        self.cursor.execute(query, (experiment_id,))
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query, (experiment_id,))
         
-        columns = [col[0] for col in self.cursor.description]
+        columns = [col[0] for col in cursor.description]
         
-        results = [dict(zip(columns, row)) for row in self.cursor.fetchall()]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        con.close()
         return results
     
     def avg_dl_throughput(self, id):
@@ -89,13 +113,15 @@ class DBHandler:
             FROM results
             WHERE experiment_id = {id};
         """
-        self.cursor.execute(query)
-        result = self.cursor.fetchone() 
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query)
+        result = cursor.fetchone() 
         if result and result[0] is not None:
             dl_rate = result[0]
         else:
             dl_rate = 0 
-        
+        con.close()
         return dl_rate
     
     def avg_ul_throughput(self, id):
@@ -104,27 +130,33 @@ class DBHandler:
             FROM results
             WHERE experiment_id = {id};
         """
-        self.cursor.execute(query)
-        result = self.cursor.fetchone()  
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query)
+        result = cursor.fetchone()  
         if result and result[0] is not None:
             ul_rate = result[0]
         else:
             ul_rate = 0 
-        
+        con.close()
         return ul_rate
     
     def delete_experiment(self, experiment_id):
         try:
-            query_delete_resultado = "DELETE FROM resultado WHERE experiment_id = ?;"
-            self.cursor.execute(query_delete_resultado, (experiment_id,))
+            query_delete_resultado = "DELETE FROM results WHERE experiment_id = ?;"
+            con = self.get_conn()
+            cursor = con.cursor()
+            cursor.execute(query_delete_resultado, (experiment_id,))
             
             query_delete_experiment = "DELETE FROM experiment WHERE id = ?;"
-            self.cursor.execute(query_delete_experiment, (experiment_id,))
+            cursor.execute(query_delete_experiment, (experiment_id,))
             
-            self.con.commit()
-            return self.cursor.rowcount  
+            con.commit()
+            con.close()
+            return cursor.rowcount  
         except Exception as e:
-            self.con.rollback() 
+            con.rollback() 
+            con.close()
             print(f"Error deleting experiment: {e}")
             return 0
             
@@ -136,5 +168,8 @@ class DBHandler:
         except Exception as e:
             return f'ERROR {e}'
         
-        self.cursor.executescript(db_schema)
-        self.con.commit()
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.executescript(db_schema)
+        con.commit()
+        con.close()

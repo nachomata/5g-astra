@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS experiment(
         iperf_duration INTEGER NOT NULL,
         iperf_mode TEXT CHECK(iperf_mode IN ('downlink', 'uplink', 'both')),
         iperf_transport TEXT CHECK(iperf_transport IN ('tcp', 'udp')),
-        iperf_type TEXT CHECK(iperf_type IN ('fixed', 'variable'))
+        iperf_bitrate TEXT CHECK(iperf_bitrate IN ('fixed', 'variable'))
 );
 
 CREATE TABLE IF NOT EXISTS results(
