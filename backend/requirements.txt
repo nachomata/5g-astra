@@ -2,3 +2,5 @@ influxdb_client
 pandas
 numpy
 PyYAML
+flask
+joblib
