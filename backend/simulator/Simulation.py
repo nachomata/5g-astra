@@ -154,22 +154,18 @@ class Simulation:
         ## OBTAIN RESULTS
         print('COLLECTING EXPERIMENT DATA')
         results = self.influxdb_handler.collect_experiment_data()
-        print(type(results))
-        
-        print(results.to_dict())
-        
+
         #SAVE RESULTS IN DB
         print('SAVING DATA')
         self.save_results(results)
         #TURNING OFF THE NETWORK
         print('CLOSING THE NETWORK...')
+        
         self.close_network()
         
         self.db_handler.add_experiment_end_time(self.id)
-        
         #CALCULATING THE MOS
         #mos = self.MOS_calculator()
-        
     ## GUARDAR LOS DATOS EN LA BASE DE DATOS
     def save_results(self, results):
         print('SAVING RESULTS')
@@ -249,20 +245,20 @@ class Simulation:
             )
         elif direction == "downlink":
             # Servidor iperf en 'srsue_5g_zmq'
-            subprocess.Popen('docker exec -it srsue_5g_zmq /bin/bash -c "iperf -s {flag}" -d'.format(flag=protocol_flag), shell=True)
+            subprocess.Popen('docker exec srsue_5g_zmq /bin/bash -c "iperf -s {flag}"'.format(flag=protocol_flag), shell=True)
             # Cliente iperf en 'upf'
-            subprocess.Popen(
-                'docker exec -it upf /bin/bash -c "iperf {flag} {reverse} {bandwidth} -c 192.168.100.2 -t {duration}" -d'.format(
+            subprocess.run(
+                'docker exec upf /bin/bash -c "iperf {flag} {reverse} {bandwidth} -c 192.168.100.2 -t {duration}"'.format(
                     flag=protocol_flag, reverse=reverse_flag, duration=duration, bandwidth=bandwidth_flag
                 ),
                 shell=True
             )
         elif direction == "both":
             # Servidor iperf en 'upf'
-            subprocess.Popen('docker exec -it upf /bin/bash -c "iperf -s {flag}" -d'.format(flag=protocol_flag), shell=True)
+            subprocess.Popen('docker exec upf /bin/bash -c "iperf -s {flag}"'.format(flag=protocol_flag), shell=True)
             # Cliente iperf en 'srsue_5g_zmq' con tráfico bidireccional
-            subprocess.Popen(
-                'docker exec -it srsue_5g_zmq /bin/bash -c "iperf {flag} -r {bandwidth} -c 192.168.100.1 -t {duration}" -d'.format(
+            subprocess.run(
+                'docker exec srsue_5g_zmq /bin/bash -c "iperf {flag} -r {bandwidth} -c 192.168.100.1 -t {duration}"'.format(
                     flag=protocol_flag, duration=duration, bandwidth=bandwidth_flag
                 ),
                 shell=True
