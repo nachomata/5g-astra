@@ -36,7 +36,7 @@ def run_experiment(simulation):
                                   }
     except Exception as e:
         print(e)
-        simulation_list[simulation.id]["status"].value = Simulation.STATUS_ERROR
+        simulation_list[simulation.id]["status"] = Simulation.STATUS_ERROR
 
 @app.route('/api/v1/experiment', methods=['POST'])
 def create_experiment():

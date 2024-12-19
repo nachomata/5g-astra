@@ -1,0 +1,4 @@
+[submodule "docker_open5gs"]
+	path = docker_open5gs
+	url = https://github.com/nachomata/docker_open5gs.git
+	branch = add-grafana-gnb

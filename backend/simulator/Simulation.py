@@ -59,19 +59,29 @@ class Simulation:
         return self.id
                 
     def launch_network(self):
-        base_path = os.path.join(os.path.dirname(__file__), "docker_open5gs")
+        base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docker_open5gs")
         sa_deploy_path = os.path.join(base_path, "sa-deploy.yaml")
-        srsgnb_zmq_path = os.path.join(base_path, "srsgnb_zmq.yaml")
+        srsgnb_zmq_path = os.path.join(base_path, "srsgnb_zmq_with_grafana.yaml")
         srsue_5g_zmq_path = os.path.join(base_path, "srsue_5g_zmq.yaml")
 
         # Core
         self.run_command(f'docker compose -f "{sa_deploy_path}" up -d')
-        time.sleep(Simulation.DELAY)
+        print('Core UP')
+        # time.sleep(Simulation.DELAY)
         # GNB
         self.run_command(f'docker compose -f "{srsgnb_zmq_path}" up -d')
-        time.sleep(Simulation.DELAY)
+        while not self.check_container_gnb():
+            print('GNB NOT UP...')
+            time.sleep(10)
+        
+        print('GNB UP')
+        # time.sleep(Simulation.DELAY)
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" up -d')  
+        while not self.check_container_ue():
+            print('UE NOT UP...')
+            time.sleep(10)
+        print('UE UP')
     
     #GNB MODIFIER
     def gnb_modifier(self,file_path, pdsch_mcs, pdsch_rb, pusch_mcs, pusch_rb):
@@ -131,8 +141,7 @@ class Simulation:
         print('srsRAN  --> initialization')
         self.launch_network()     
         ## EXECUTE IPERFS
-        time.sleep(Simulation.DELAY)
-        print('NETWORK WORKING FINE')
+        # time.sleep(Simulation.DELAY)
         self.launch_iperfs(
             direction = self.iperf_mode,
             protocol = self.iperf_transport,
@@ -141,7 +150,7 @@ class Simulation:
         )
         print('IPERFS DONE...')
         ## WAIT THE EXPERIMENT ENDS
-        time.sleep(self.iperf_duration + 10)
+        # time.sleep(self.iperf_duration + 10)
         ## OBTAIN RESULTS
         print('IPERFS ENDING...')
         print('COLLECTING EXPERIMENT DATA')
@@ -183,6 +192,15 @@ class Simulation:
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" down')  
     
+    def check_container_gnb(self):
+        command = "docker logs srsgnb_zmq"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return "Connection to AMF on 172.22.0.10:38412 completed" in result.stdout
+    def check_container_ue(self):
+        command = "docker logs srsue_5g_zmq"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return "RRC Connected" in result.stdout
+
     def launch_iperfs(self, direction="uplink", protocol="tcp", duration=60, mode="fixed"):
         """
         Lanza iperf en la dirección, protocolo, duración y modo especificados.
@@ -196,6 +214,8 @@ class Simulation:
             duration (int): Duración del tráfico en segundos. Por defecto es 60.
             mode (str): Modo de tráfico: "fixed" o "variable". Por defecto es "fixed".
         """
+        
+        self.check_container_ue()
         # Validar parámetros 'protocol' y 'mode'
         if protocol not in ["tcp", "udp"]:
             print("Protocolo no válido. Usa 'tcp' o 'udp'.")
@@ -216,11 +236,9 @@ class Simulation:
             bandwidth_flag = "-b 100M" if protocol == "udp" else ""  # Fijo a 10 Mbps en UDP
 
         if direction == "uplink":
-            # Servidor iperf en 'upf'
-            subprocess.Popen('docker exec -it upf /bin/bash -c "iperf -s {flag}" -d'.format(flag=protocol_flag), shell=True)
-            # Cliente iperf en 'srsue_5g_zmq'
+            subprocess.Popen('docker exec upf /bin/bash -c "iperf -s {flag}"'.format(flag=protocol_flag), shell=True)
             subprocess.Popen(
-                'docker exec -it srsue_5g_zmq /bin/bash -c "iperf {flag} {reverse} {bandwidth} -c 192.168.100.1 -t {duration}" -d'.format(
+                'docker exec srsue_5g_zmq /bin/bash -c "apt install iperf && iperf {flag} {reverse} {bandwidth} -c 192.168.100.1 -t {duration}"'.format(
                     flag=protocol_flag, reverse=reverse_flag, duration=duration, bandwidth=bandwidth_flag
                 ),
                 shell=True
