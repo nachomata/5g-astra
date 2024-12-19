@@ -74,7 +74,7 @@ class DBHandler:
         cursor = con.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
-        columns = [description[0] for description in self.cursor.description]
+        columns = [description[0] for description in cursor.description]
         con.close()
         results = [dict(zip(columns, row)) for row in rows]
         return results

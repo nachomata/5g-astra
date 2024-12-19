@@ -14,7 +14,7 @@ simulation_list = {}
 @app.route('/api/v1/experiments', methods=['GET'])
 def get_all_experiments():
     global db
-    return jsonify(db.get_all_experiments().values.tolist())
+    return jsonify(db.get_all_experiments())
 @app.route('/api/v1/experiment/<int:id>', methods=['GET'])
 def get_experiment_id(id:int):
     global db
