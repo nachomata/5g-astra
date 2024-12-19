@@ -45,27 +45,28 @@ class DBHandler:
         con.close()
         
     def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id, timestamp):
-        query = """
+        query = f"""
         INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, experiment_id, timestamp)
         VALUES (?, ?, ?, ?, ?, ?);
         """
-        values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi, timestamp)]
+        values = list(zip(dl_rate, uplink_rate, snr, cqi, [experiment_id] * len(dl_rate), timestamp))       
+        
         con = self.get_conn()
         cursor = con.cursor()
         cursor.executemany(query, values)
+        
         con.commit()
         con.close()
     
     def result_collect(self, experiment_id):
-        query = """SELECT * FROM results WHERE experiment_id = ?;"""
+        query = "SELECT * FROM results WHERE experiment_id = ?;"
         con = self.get_conn()
         cursor = con.cursor()
-        cursor.execute(query, (experiment_id,))
-        
-        columns = [col[0] for col in cursor.description]
-        
-        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        cursor.execute(query,(experiment_id,))
+            
+        results = cursor.fetchall()
         con.close()
+        
         return results
     
     def get_all_experiments(self):

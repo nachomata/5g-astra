@@ -154,22 +154,18 @@ class Simulation:
         ## OBTAIN RESULTS
         print('COLLECTING EXPERIMENT DATA')
         results = self.influxdb_handler.collect_experiment_data()
-        print(type(results))
-        
-        print(results.to_dict())
-        
+
         #SAVE RESULTS IN DB
         print('SAVING DATA')
         self.save_results(results)
         #TURNING OFF THE NETWORK
         print('CLOSING THE NETWORK...')
+        
         self.close_network()
         
         self.db_handler.add_experiment_end_time(self.id)
-        
         #CALCULATING THE MOS
         #mos = self.MOS_calculator()
-        
     ## GUARDAR LOS DATOS EN LA BASE DE DATOS
     def save_results(self, results):
         print('SAVING RESULTS')
