@@ -69,6 +69,45 @@ class DBHandler:
         
         return results
     
+    def result_collect_ml(self, experiment_id):
+        query = "SELECT * FROM results WHERE experiment_id = ?;"
+        con = self.get_conn()
+        cursor = con.cursor()
+        cursor.execute(query, (experiment_id,))
+            
+        results = cursor.fetchall()
+        con.close()
+        
+        # Inicializa listas para cada columna
+        ids = []
+        timestamps = []
+        col3 = []
+        col4 = []
+        col5 = []
+        col6 = []
+        col7 = []
+        
+        # Itera por cada fila y extrae valores a las listas
+        for row in results:
+            ids.append(row[0])
+            timestamps.append(row[1])
+            col3.append(row[2])
+            col4.append(row[3])
+            col5.append(row[4])
+            col6.append(row[5])
+            col7.append(row[6])
+        
+        # Retorna un diccionario con las listas
+        return {
+            "ids": ids,
+            "timestamps": timestamps,
+            "dl_rate": col3,
+            "ul_rate": col4,
+            "snr": col5,
+            "cqi": col6,
+            "id_experiment": col7,
+        }
+
     def get_all_experiments(self):
         query = "SELECT * FROM experiment;"
         con = self.get_conn()

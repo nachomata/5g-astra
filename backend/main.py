@@ -30,6 +30,30 @@ def get_experiment_results(id:int):
     global db
     return jsonify(db.result_collect(id))
 
+
+@app.route('/api/v1/experiment/<int:id>/mos', methods=['GET'])
+def get_mos(id:int):
+    global db
+    global simulation_list
+    results = db.result_collect_ml(id)
+
+
+    dl_rate = results['dl_rate']
+    ul_rate = results['ul_rate']
+
+    inputs = {'dl_rate': dl_rate, 'ul_rate': ul_rate}
+
+    mos = Simulation.ML_MOS_calculator(inputs)
+
+    def calcular_media(array):
+        if len(array) == 0:  # Evita dividir por cero si el array está vacío
+            return 0
+        return sum(array) / len(array)   
+
+    print(f'PRINT DE MEDIA MOS PROPLAYA --> {calcular_media(mos)}')
+
+    return jsonify(calcular_media(mos))
+
 def run_experiment(simulation):
     global simulation_list
     try:
@@ -101,4 +125,4 @@ def get_status(id:int):
     }), 200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="::")

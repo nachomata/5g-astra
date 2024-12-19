@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import yaml
 import os
+import joblib
 
 from .DBhandler import DBHandler
 from .MyInfluxDB import InfluxDBCollector
@@ -267,24 +268,19 @@ class Simulation:
             )
         else:
             print("Dirección no válida. Usa 'uplink', 'downlink' o 'both'.")
-        
-    def ML_MOS_calculator(self, inputs):
+     
+    def ML_MOS_calculator(inputs):
         kqi = "mos"
         ml_mode = "regression"
         algorithm = 'RF'
 
         X = pd.DataFrame(inputs)
-        scaler = fun.LoadScaler("./stdScaler")
-        inputsScaled = scaler.transform(inputs)
 
-        try:
-            fileName ='{}/{}_{}_{}_{}.joblib'.format(".", algorithm,  kqi, ml_mode, 'No_FE_NoKQI')
-            if os.path.exists(fileName):
-                model = fun.LoadModel(fileName)
-                y_pred = model.predict(inputsScaled)
+        scaler = joblib.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "stdScaler.pkl"))
+        inputsScaled = scaler.transform(X)
 
-        except Exception as e:
-            print("It is not possible to estimate " + kqi + " with " + algorithm)
-            print(e)
+        from joblib import load
+        model = load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "RF_mos_regression_No_FE_NoKQI.joblib"))
+        y_pred = model.predict(inputsScaled)
         
         return y_pred
