@@ -3,6 +3,8 @@ from simulator import DBHandler, Simulation
 from time import sleep, time
 import pandas as pd
 from flask import Flask, request, jsonify, send_file
+from datetime import datetime
+
 
 DB_PATH = 'AstraSQLite.db'
 db = DBHandler(DB_PATH)
@@ -76,12 +78,15 @@ def get_status(id:int):
     time_sleeps = 25
 
     exp = db.experiment_collect(id)
-    start_time = pd.to_datetime(exp["start_time"],unit='s')
-    end_time = start_time + exp["iperf_duration"] + time_sleeps
-    actual_time = time()
-    progress = (actual_time - start_time) / (end_time-start_time)
 
-    return jsonify(progress)
+    dt_object = datetime.strptime(exp[0]["start_time"], "%Y-%m-%d %H:%M:%S")
+    start_time = dt_object.timestamp()
+    end_time = start_time + exp[0]["iperf_duration"] + time_sleeps
+    actual_time = time()
+
+    progress = (actual_time - start_time) / (end_time-start_time) * 100
+
+    return jsonify(progress=100 if progress > 100 else progress), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
