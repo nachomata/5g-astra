@@ -1,5 +1,9 @@
 CREATE TABLE IF NOT EXISTS experiment(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        start_time TIMESTAMP NOT NULL,
+        name_experiment TEXT NOT NULL,
+        end_time TIMESTAMP,
+        experiment_description TEXT NOT NULL,
         mcs_downlink INTEGER NOT NULL,
         mcs_uplink INTEGER NOT NULL,
         end_rb_downlink INTEGER NOT NULL,
@@ -12,6 +16,7 @@ CREATE TABLE IF NOT EXISTS experiment(
 
 CREATE TABLE IF NOT EXISTS results(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        time TIMESTAMP,
         downlink_rate FLOAT,
         uplink_rate FLOAT,
         snr FLOAT,

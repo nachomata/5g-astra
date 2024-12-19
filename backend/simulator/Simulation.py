@@ -1,30 +1,40 @@
 import subprocess
 import sys
-import shutil
 import time
 import yaml
 import os
+from DBhandler import DBHandler
+from MyInfluxDB import InfluxDBCollector
+
 import pandas as pd
 
 from backend.simulator.DBhandler import DBHandler
-from MyInfluxdb import InfluxDBCollector
+from MyInfluxDB import InfluxDBCollector
 from MLfunctions import Functions as fun
 class Simulation:
     
+    STATUS_RUNNING = 0
+    STATUS_COMPLETED = 1
+    STATUS_ERROR = 2
+    STATUS_MSG = {
+        0: "Running",
+        1: "Completed",
+        2: "Error"
+    }
     GNB_ZMQ_FILE_PATH = os.path.join("..", "docker_open5gs", "srsran", "gnb_zmq.yml")
-    EXPERIMENT_DURATION = 1
     DB_PATH = os.path.join(".", "AstraSQLite.db")
     URL = "http://localhost:8086"
     TOKEN = '605bc59413b7d5457d181ccf20f9fda15693f81b068d70396cc183081b264f3b'
+    DELAY = 5
     
-    
-    def __init__(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
-                 iperf_duration, iperf_mode, iperf_transport, iperf_type):
+    def __init__(self,name,dl_mcs, ul_mcs, dl_rb, ul_rb, 
+                 iperf_duration, iperf_mode, iperf_transport, iperf_type,description):
         
         self.dl_mcs = dl_mcs
         self.ul_mcs = ul_mcs
         self.dl_rb = dl_rb
         self.ul_rb = ul_rb
+        self.name = name
         
         self.iperf_duration = iperf_duration
         self.iperf_mode = iperf_mode
@@ -34,7 +44,7 @@ class Simulation:
         self.db_handler = DBHandler(Simulation.DB_PATH)
         self.influxdb_handler = InfluxDBCollector(Simulation.TOKEN,Simulation.URL)
         
-        self.db_handler.experiment_insert(
+        self.id = self.db_handler.experiment_insert(
             dl_mcs=self.dl_mcs,
             ul_mcs=self.ul_mcs,
             dl_rb=self.dl_rb,
@@ -42,10 +52,14 @@ class Simulation:
             iperf_duration=self.iperf_duration,
             iperf_mode=self.iperf_mode,
             iperf_transport=self.iperf_transport,
-            iperf_type=self.iperf_type
+            iperf_type=self.iperf_type,
+            description = description,
+            name = self.name
         )
+        
+    def get_id(self):
+        return self.id
                 
-      
     def launch_network(self):
         base_path = os.path.join(os.path.dirname(__file__), "docker_open5gs")
         sa_deploy_path = os.path.join(base_path, "sa-deploy.yaml")
@@ -54,10 +68,10 @@ class Simulation:
 
         # Core
         self.run_command(f'docker compose -f "{sa_deploy_path}" up -d')
-        time.sleep(4)
+        time.sleep(Simulation.DELAY)
         # GNB
         self.run_command(f'docker compose -f "{srsgnb_zmq_path}" up -d')
-        time.sleep(4)
+        time.sleep(Simulation.DELAY)
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" up -d')  
     
@@ -95,7 +109,6 @@ class Simulation:
         except Exception as e:
             print(f"Error al actualizar el archivo: {e}")
     
-    
     def run_command(self,command):
         try:
             print(f"\nEjecutando: {command}")
@@ -120,14 +133,13 @@ class Simulation:
         print('srsRAN  --> initialization')
         self.launch_network()     
         ## EXECUTE IPERFS
-        time.sleep(4)
+        time.sleep(Simulation.DELAY)
         print('NETWORK WORKING FINE')
         self.launch_iperfs(
             direction = self.iperf_mode,
             protocol = self.iperf_transport,
             duration = self.iperf_duration,
             mode = self.iperf_type
-
         )
         print('IPERFS DONE...')
         ## WAIT THE EXPERIMENT ENDS
@@ -143,33 +155,36 @@ class Simulation:
         print('CLOSING THE NETWORK...')
         self.close_network()
         
+        self.db_handler.add_experiment_end_time(self.id)
+        
         #CALCULATING THE MOS
         #mos = self.MOS_calculator()
-        
         
     ## GUARDAR LOS DATOS EN LA BASE DE DATOS
     def save_results(self,results):        
         self.db_handler.result_insert(
             dl_rate = results['dl_rate'],
+            timestamp= results['timestamp'],
             uplink_rate = results['ul_rate'],
             snr = results['snr'],
             cqi = results['cqi'],
-            experiment_id = self.db_handler.id_max_collect()
+            experiment_id = self.id
         )
+    
     ## SCRIPT QUE CIERRE LOS DOCKERS PROPLAYERS 
     def close_network(self):
         base_path = os.path.join(os.path.dirname(__file__), "docker_open5gs")
         sa_deploy_path = os.path.join(base_path, "sa-deploy.yaml")
         srsgnb_zmq_path = os.path.join(base_path, "srsgnb_zmq.yaml")
         srsue_5g_zmq_path = os.path.join(base_path, "srsue_5g_zmq.yaml")
-
+        
         # Core
         self.run_command(f'docker compose -f "{sa_deploy_path}" down')
         # GNB
         self.run_command(f'docker compose -f "{srsgnb_zmq_path}" down')
         # UE
         self.run_command(f'docker compose -f "{srsue_5g_zmq_path}" down')  
-            
+    
     def launch_iperfs(self, direction="uplink", protocol="tcp", duration=60, mode="fixed"):
         """
         Lanza iperf en la dirección, protocolo, duración y modo especificados.
