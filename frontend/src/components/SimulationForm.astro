@@ -167,7 +167,7 @@ const fields = [
                 iperf_direction: $form.iperf_direction.value,
                 iperf_duration: parseInt($form.iperf_duration.value),
                 iperf_protocol: $form.iperf_protocol.value,
-                iperf_bitrate: parseInt($form.iperf_bitrate.value)
+                iperf_bitrate: $form.iperf_bitrate.value
             };
             console.log(JSON.stringify(dataToSend));
 
@@ -181,7 +181,7 @@ const fields = [
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    window.location.href = `/results/${data.id}`;
+                    window.location.href = `/result/${data.id}`;
                 } else {
                     throw new Error("Error launching simulation.");
                 }

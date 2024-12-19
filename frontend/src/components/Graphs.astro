@@ -1,0 +1,139 @@
+---
+interface Props {
+    id: number;
+}
+
+const { id } = Astro.props;
+---
+
+<div id="container" class="max-w-[1000px] w-full flex flex-col gap-10" data-id=`${id}`></div>
+
+<script>
+    import { $ } from "@/lib/dom-selector";
+    import { PUBLIC_BACKEND_URL } from "@/consts/const";
+    import ApexCharts from "apexcharts";
+
+    const graphs = [
+        { title: "Throughput downlink (Mbps)", index: 2 },
+        { title: "Throughput uplink (Mbps)", index: 3 },
+        { title: "SINR (dB)", index: 4 },
+        { title: "CQI (dB)", index: 5 },
+    ];
+
+    let options = {
+        series: [
+            {
+                data: [],
+            },
+        ],
+        chart: {
+            height: 350,
+            type: "line",
+            id: "areachart-2",
+        },
+        annotations: {
+            yaxis: [],
+            xaxis: [],
+            points: [],
+        },
+        dataLabels: {
+            enabled: false,
+            style: {
+                colors: ["#d1d5db"],
+            },
+        },
+        markers: {
+            colors: ["#F44336", "#E91E63", "#9C27B0"],
+        },
+        colors: ["#FFF"],
+        stroke: {
+            curve: "smooth",
+        },
+        grid: {
+            padding: {
+                right: 30,
+                left: 20,
+            },
+        },
+        tooltip: {
+            theme: "dark",
+        },
+        title: {
+            text: "",
+            align: "center",
+            style: {
+                color: "#d1d5db",
+            },
+        },
+        labels: [],
+        xaxis: {
+            type: "datetime",
+            axisBorder: {
+                show: true,
+                color: "#d1d5db",
+            },
+            labels: {
+                style: {
+                    colors: "#d1d5db",
+                },
+            },
+        },
+        yaxis: {
+            labels: {
+                style: {
+                    colors: "#d1d5db",
+                },
+            },
+            axisBorder: {
+                show: true,
+                color: "#d1d5db",
+            },
+        },
+    };
+
+    const $container = $("#container");
+    const id = $container?.dataset.id;
+    let res = null;
+
+    document.addEventListener("astro:page-load", async () => {
+        res = await (
+            await fetch(`${PUBLIC_BACKEND_URL}/experiment/${id}/results`)
+        ).json();
+
+        options.labels = res
+            .map((item: string[]) => {
+                const match = item[1].match(
+                    /(\d{4})(\d{2})(\d{2})_(\d{2})_(\d{2})_(\d{2})/,
+                );
+                if (match) {
+                    const [_, year, month, day, hour, minute, second] = match;
+                    return new Date(
+                        parseInt(year, 10),
+                        parseInt(month, 10) - 1,
+                        parseInt(day, 10),
+                        parseInt(hour, 10),
+                        parseInt(minute, 10),
+                        parseInt(second, 10),
+                    ).getTime();
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        for (const graph of graphs) {
+            const $el = document.createElement("div");
+            $el.id = `chart-${graph.index}`;
+            $container?.appendChild($el);
+            createGraph($el, graph.title, graph.index);
+        }
+
+    });
+    const createGraph = ($el: HTMLDivElement, title: string, index: number) => {
+        options.series[0].data = res.map(
+            (item: number[]) => `${item[index]}`,
+        );
+        options.title.text = title;
+        let chart = new ApexCharts($el, options);
+        chart.render();
+    };
+</script>
