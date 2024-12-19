@@ -1,0 +1,28 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ProgressBarExperiment from "@/components/ProgressBarExperiment.tsx";
+import { PUBLIC_BACKEND_URL, GRAFANA_GNB_URL, EXPERIMENT_STATUS } from "@/consts/const";
+import { get_experiment_status } from "@/lib/api";
+
+
+const { id: id_str } = Astro.params;
+const id = Number.parseInt(id_str!, 10);
+const { status, progress } = await get_experiment_status(id);
+
+---
+
+<Layout title={`5G Astra: Result ${id}`}>
+    {
+        status === EXPERIMENT_STATUS.COMPLETED ? (
+          <span>
+            "El experimento ha terminado"
+          </span>
+        ) : (
+          <ProgressBarExperiment id={id} initialProgress={progress!} client:load />
+          <iframe
+            src={`${GRAFANA_GNB_URL}`}
+            class="w-full h-screen"
+            />
+        )
+      }
+</Layout>
