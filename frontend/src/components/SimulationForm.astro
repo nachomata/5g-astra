@@ -49,7 +49,10 @@ const fields = [
         { value: 'tcp', text: 'TCP' }, 
         { value: 'udp', text: 'UDP' }
 	], required: true },
-    { id: 'iperf_bitrate', description: 'IPerf bitrate (Kbps)', type: 'number', required: true, default: 100 }
+    { id: 'iperf_bitrate', description: 'IPerf bitrate type', type: 'select', options: [
+        { value: 'fixed', text: 'Fixed' }, 
+        { value: 'variable', text: 'Variable' }
+    ], required: true }
 ];
 ---
 

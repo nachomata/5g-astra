@@ -1,13 +1,14 @@
 import sqlite3
 from datetime import datetime
 import pandas as pd
+import os
 
 class DBHandler:
     
     def __init__(self,ruta_bd):
-        self.con = sqlite3.connect(ruta_bd)
+        self.con = sqlite3.connect(ruta_bd, check_same_thread=False)
         self.cursor = self.con.cursor()
-        self.db_creation()
+        self.db_creation(os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.sql"))
         
     def experiment_insert(self, dl_mcs, ul_mcs, dl_rb, ul_rb, 
                         iperf_duration, iperf_mode, iperf_transport, iperf_type, description,name):
@@ -127,13 +128,13 @@ class DBHandler:
             print(f"Error deleting experiment: {e}")
             return 0
             
-    def db_creation(self,db_path):
+    def db_creation(self, schema_path):
         db_schema = ''
         try:
-            with open(db_path, "r") as file:
+            with open(schema_path, "r") as file:
                 db_schema = file.read()
         except Exception as e:
             return f'ERROR {e}'
         
-        self.cursor.execute(db_schema)
+        self.cursor.executescript(db_schema)
         self.con.commit()
