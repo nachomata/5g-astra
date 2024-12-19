@@ -1,16 +1,14 @@
 import subprocess
 import sys
 import time
+import pandas as pd
 import yaml
 import os
-from DBhandler import DBHandler
-from MyInfluxDB import InfluxDBCollector
 
-import pandas as pd
+from .DBhandler import DBHandler
+from .MyInfluxDB import InfluxDBCollector
+from .MLfunctions import Functions as fun
 
-from backend.simulator.DBhandler import DBHandler
-from MyInfluxDB import InfluxDBCollector
-from MLfunctions import Functions as fun
 class Simulation:
     
     STATUS_RUNNING = 0
