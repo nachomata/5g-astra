@@ -73,12 +73,11 @@ class DBHandler:
         con = self.get_conn()
         cursor = con.cursor()
         cursor.execute(query)
-        
-        rows = cursor.fetchall()  
-        columns = [description[0] for description in cursor.description]
-        
+        rows = cursor.fetchall()
+        columns = [description[0] for description in self.cursor.description]
         con.close()
-        return pd.DataFrame(rows, columns=columns)
+        results = [dict(zip(columns, row)) for row in rows]
+        return results
     
     def get_all_results(self):
         query = "SELECT * FROM results;"
