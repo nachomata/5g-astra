@@ -1,4 +1,4 @@
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client import InfluxDBClient
 import pandas as pd
 import numpy as np
 from itertools import zip_longest
@@ -119,7 +119,10 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.DL_RATE_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                values.append(record['_value'])    
+                values.append({
+                    "value": record['_value'],
+                    "time": record['_time']
+                })    
         return values
     
     def collect_ul_rate(self):
@@ -127,7 +130,9 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.UL_RATE_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                values.append(record['_value'])    
+                 values.append({
+                    "value": record['_value'],
+                })    
         return values
     
     def collect_snr(self):
@@ -135,7 +140,9 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.UL_SNR_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                values.append(record['_value'])    
+                 values.append({
+                    "value": record['_value'],
+                })    
         return values
         
     def collect_cqi(self):
@@ -143,17 +150,21 @@ class InfluxDBCollector():
         tables = self.query_api.query(InfluxDBCollector.CQI_QUERY, org="srs")
         for table in tables:
             for record in table.records:
-                values.append(record['_value'])    
+                 values.append({
+                    "value": record['_value'],
+                })
         return values
     
     def collect_experiment_data(self):
+        
         dl_rate = self.collect_dl_rate()
+        dl_rate_values = [item['value'] for item in dl_rate]
+        timestamp = [item['time'] for item in dl_rate]
+        
         ul_rate = self.collect_ul_rate()
         snr = self.collect_snr()
         cqi = self.collect_cqi()
 
-        data = list(zip_longest(dl_rate, ul_rate, snr, cqi, fillvalue=np.nan))
-        df = pd.DataFrame(data, columns=["dl_rate", "ul_rate", "snr", "cqi"])
+        data = list(zip_longest(timestamp,dl_rate_values, ul_rate, snr, cqi, fillvalue=np.nan))
+        df = pd.DataFrame(data, columns=["timestamp","dl_rate", "ul_rate", "snr", "cqi"])
         return df
-        
-    
