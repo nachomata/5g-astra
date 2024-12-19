@@ -26,7 +26,7 @@ class Simulation:
     DELAY = 5
     
     def __init__(self,name,dl_mcs, ul_mcs, dl_rb, ul_rb, 
-                 iperf_duration, iperf_mode, iperf_transport, iperf_type,description):
+                 iperf_duration, iperf_mode, iperf_transport, iperf_bitrate,description):
         
         self.dl_mcs = dl_mcs
         self.ul_mcs = ul_mcs
@@ -37,7 +37,7 @@ class Simulation:
         self.iperf_duration = iperf_duration
         self.iperf_mode = iperf_mode
         self.iperf_transport = iperf_transport
-        self.iperf_type = iperf_type
+        self.iperf_bitrate = iperf_bitrate
         
         self.db_handler = DBHandler(Simulation.DB_PATH)
         self.influxdb_handler = InfluxDBCollector(Simulation.TOKEN,Simulation.URL)
@@ -50,7 +50,7 @@ class Simulation:
             iperf_duration=self.iperf_duration,
             iperf_mode=self.iperf_mode,
             iperf_transport=self.iperf_transport,
-            iperf_type=self.iperf_type,
+            iperf_bitrate=self.iperf_bitrate,
             description = description,
             name = self.name
         )
@@ -137,7 +137,7 @@ class Simulation:
             direction = self.iperf_mode,
             protocol = self.iperf_transport,
             duration = self.iperf_duration,
-            mode = self.iperf_type
+            mode = self.iperf_bitrate
         )
         print('IPERFS DONE...')
         ## WAIT THE EXPERIMENT ENDS

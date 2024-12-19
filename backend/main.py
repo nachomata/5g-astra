@@ -1,11 +1,8 @@
+from threading import Thread
 from simulator import DBHandler, Simulation
-import csv
-from multiprocessing import Process
 from time import sleep, time
 import pandas as pd
 from flask import Flask, request, jsonify, send_file
-import json
-import os
 
 DB_PATH = 'AstraSQLite.db'
 db = DBHandler(DB_PATH)
@@ -17,8 +14,7 @@ simulation_list = {}
 @app.route('/api/v1/experiments', methods=['GET'])
 def get_all_experiments():
     global db
-    return jsonify(db.get_all_experiments().to_dict())
-
+    return jsonify(db.get_all_experiments().values.tolist())
 @app.route('/api/v1/experiment/<int:id>', methods=['GET'])
 def get_experiment_id(id:int):
     global db
@@ -54,7 +50,7 @@ def create_experiment():
         iperf_duration = data['iperf_duration'],
         iperf_mode = data['iperf_direction'],
         iperf_transport = data['iperf_protocol'],
-        iperf_type = data['iperf_type'],
+        iperf_bitrate = data['iperf_bitrate'],
         description = data['experiment_description']
     )
     
@@ -62,16 +58,17 @@ def create_experiment():
                                   "progress": 0,
                                   }
     
-    p = Process(target=run_experiment, args=(simulation))
-    p.start()
+    thread = Thread(target=run_experiment, args=(simulation,))
+    thread.start()
     
     return jsonify({"id": simulation.id,
-                    "status": Simulation.STATUS_MSG[simulation_list[simulation.id]["status"].value]}), 201
+                    "status": Simulation.STATUS_MSG[simulation_list[simulation.id]["status"]]}), 201
 
 @app.route('/api/v1/experiment/<int:id>', methods=['DELETE'])
 def delete_experiment(id:int):
     global db
-    db.delete_experiment(id)
+    print(db.delete_experiment(id))
+    return jsonify({"message": "Experiment deleted"}), 200
 
 @app.route('/api/v1/experiment/<int:id>/status', methods=['GET'])
 def get_status(id:int):
