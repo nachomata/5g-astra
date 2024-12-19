@@ -33,14 +33,14 @@ class DBHandler:
             """
         self.cursor.execute(query, (end_time, id))
         self.con.commit()
-    
-    def result_insert(self,dl_rate,uplink_rate, snr, cqi, timestamp,experiment_id):
-        query = f"""
-        INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, timestamp,experiment_id)
-        VALUES (?, ?, ?, ?, ?,{experiment_id});
+        
+    def result_insert(self, dl_rate, uplink_rate, snr, cqi, experiment_id):
+        query = """
+        INSERT INTO results (downlink_rate, uplink_rate, snr, cqi, experiment_id)
+        VALUES (?, ?, ?, ?, ?);
         """
-        values = list(zip(dl_rate, uplink_rate, snr, cqi, timestamp))
-        self.cursor.executemany(query,values)
+        values = [item + (experiment_id,) for item in zip(dl_rate, uplink_rate, snr, cqi)]
+        self.cursor.executemany(query, values)
         self.con.commit()
     
     def result_collect(self, experiment_id):
